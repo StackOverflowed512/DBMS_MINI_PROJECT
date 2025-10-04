@@ -64,6 +64,14 @@ function App() {
                             }
                         />
                         <Route
+                            path="/persons/new"
+                            element={
+                                <ProtectedRoute>
+                                    <Persons />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
                             path="/vaccines"
                             element={
                                 <ProtectedRoute>
