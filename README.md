@@ -20,7 +20,6 @@ A comprehensive full-stack web application for managing vaccine distribution, tr
 - **JWT** for authentication
 - **bcryptjs** for password hashing
 - **Helmet** for security headers
-- **Rate limiting** for API protection
 
 ### Frontend
 - **React 18** with Vite
