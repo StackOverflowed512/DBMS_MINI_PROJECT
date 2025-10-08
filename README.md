@@ -159,18 +159,8 @@ NODE_ENV=production
 4. Push to branch: `git push origin feature-name`
 5. Submit a pull request
 
-## 📄 License
 
-This project is licensed under the MIT License.
-
-## 👥 Authors
-
-- Your Name - Initial work
-
-## 🐛 Known Issues
-
-- None currently reported
 
 ## 📞 Support
 
-For support, email your-email@example.com or create an issue in the repository.
+For support, email omkarmutyalwar5@gmail.com or create an issue in the repository.
