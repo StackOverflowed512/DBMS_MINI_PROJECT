@@ -289,7 +289,12 @@ function Sessions() {
                                                         key={person._id}
                                                         value={person._id}
                                                     >
-                                                        {person.fullName}
+                                                        {person?.fullName ||
+                                                            "Unknown"}{" "}
+                                                        (
+                                                        {person?.email ||
+                                                            "No email"}
+                                                        )
                                                     </option>
                                                 ))}
                                             </Form.Select>
@@ -444,58 +449,52 @@ function Sessions() {
                                                             <td>
                                                                 <div>
                                                                     <strong>
-                                                                        {
-                                                                            session
-                                                                                .person
-                                                                                .fullName
-                                                                        }
+                                                                        {session
+                                                                            .person
+                                                                            ?.fullName ||
+                                                                            "Unknown Person"}
                                                                     </strong>
                                                                     <br />
                                                                     <small className="text-muted">
-                                                                        {
-                                                                            session
-                                                                                .person
-                                                                                .email
-                                                                        }
+                                                                        {session
+                                                                            .person
+                                                                            ?.email ||
+                                                                            "No email"}
                                                                     </small>
                                                                 </div>
                                                             </td>
                                                             <td>
                                                                 <div>
                                                                     <strong>
-                                                                        {
-                                                                            session
-                                                                                .vaccine
-                                                                                .vaccineName
-                                                                        }
+                                                                        {session
+                                                                            .vaccine
+                                                                            ?.vaccineName ||
+                                                                            "Unknown Vaccine"}
                                                                     </strong>
                                                                     <br />
                                                                     <small className="text-muted">
-                                                                        {
-                                                                            session
-                                                                                .vaccine
-                                                                                .manufacturer
-                                                                        }
+                                                                        {session
+                                                                            .vaccine
+                                                                            ?.manufacturer ||
+                                                                            "Unknown manufacturer"}
                                                                     </small>
                                                                 </div>
                                                             </td>
                                                             <td>
                                                                 <div>
                                                                     <strong>
-                                                                        {
-                                                                            session
-                                                                                .location
-                                                                                .locationName
-                                                                        }
+                                                                        {session
+                                                                            .location
+                                                                            ?.locationName ||
+                                                                            "Unknown Location"}
                                                                     </strong>
                                                                     <br />
                                                                     <small className="text-muted">
-                                                                        {
-                                                                            session
-                                                                                .location
-                                                                                .address
-                                                                                .city
-                                                                        }
+                                                                        {session
+                                                                            .location
+                                                                            ?.address
+                                                                            ?.city ||
+                                                                            "Unknown city"}
                                                                     </small>
                                                                 </div>
                                                             </td>
@@ -612,8 +611,12 @@ function Sessions() {
                                                     key={person._id}
                                                     value={person._id}
                                                 >
-                                                    {person.fullName} (
-                                                    {person.email})
+                                                    {person?.fullName ||
+                                                        "Unknown"}{" "}
+                                                    (
+                                                    {person?.email ||
+                                                        "No email"}
+                                                    )
                                                 </option>
                                             ))}
                                         </Form.Select>
