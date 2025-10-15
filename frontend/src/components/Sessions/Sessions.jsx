@@ -17,8 +17,10 @@ import {
 } from "react-bootstrap";
 import axios from "axios";
 import { format } from "date-fns";
+import { useLocation } from "react-router-dom";
 
 function Sessions() {
+    const location = useLocation();
     const [sessions, setSessions] = useState([]);
     const [persons, setPersons] = useState([]);
     const [vaccines, setVaccines] = useState([]);
@@ -52,6 +54,12 @@ function Sessions() {
         fetchSessions();
         fetchDropdownData();
     }, [currentPage, filters]);
+
+    useEffect(() => {
+        if (location.pathname === "/sessions/new") {
+            handleShowModal();
+        }
+    }, [location.pathname]);
 
     const fetchSessions = async () => {
         try {

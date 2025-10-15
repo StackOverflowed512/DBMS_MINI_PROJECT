@@ -96,6 +96,14 @@ function App() {
                             }
                         />
                         <Route
+                            path="/sessions/new"
+                            element={
+                                <ProtectedRoute>
+                                    <Sessions />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
                             path="/"
                             element={<Navigate to="/dashboard" />}
                         />
