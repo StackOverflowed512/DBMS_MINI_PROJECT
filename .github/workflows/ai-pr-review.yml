@@ -1,0 +1,217 @@
+name: AI PR Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      ############################################################
+      # Install tools
+      ############################################################
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      ############################################################
+      # Fetch changed files from GitHub
+      ############################################################
+
+      - name: Download PR files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl -L \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files?per_page=100" \
+            > files.json
+
+      ############################################################
+      # Prepare review directory
+      ############################################################
+
+      - name: Create review workspace
+        run: |
+          mkdir prompts
+          mkdir responses
+
+      ############################################################
+      # Generate prompt per file
+      ############################################################
+
+      - name: Create prompts
+        run: |
+          jq -c '.[]' files.json | while read file; do
+
+            filename=$(echo "$file" | jq -r '.filename')
+
+            patch=$(echo "$file" | jq -r '.patch // ""')
+
+            if [ -z "$patch" ]; then
+              continue
+            fi
+
+            mkdir -p "prompts/$(dirname "$filename")"
+
+            cat > "prompts/${filename}.txt" <<EOF
+You are a senior software engineer reviewing a Pull Request.
+
+Review ONLY the patch below.
+
+Only report HIGH confidence issues.
+
+Focus only on
+
+- Bugs
+- Security
+- Performance
+- Validation
+- Error handling
+- Missing tests
+
+Return ONLY valid JSON.
+
+{
+  "summary":"...",
+  "findings":[
+    {
+      "path":"$filename",
+      "line":1,
+      "severity":"HIGH|MEDIUM|LOW",
+      "title":"...",
+      "comment":"..."
+    }
+  ]
+}
+
+PATCH
+
+$patch
+EOF
+
+          done
+
+      ############################################################
+      # Call Mistral for every file
+      ############################################################
+
+      - name: Review files
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: |
+
+          find prompts -name "*.txt" | while read prompt
+          do
+
+            output="responses/$(basename "$prompt" .txt).json"
+
+            jq -n \
+              --rawfile prompt "$prompt" \
+              '{
+                model:"mistral-small-latest",
+                temperature:0.1,
+                response_format:{
+                  type:"json_object"
+                },
+                messages:[
+                  {
+                    role:"user",
+                    content:$prompt
+                  }
+                ]
+              }' > request.json
+
+            curl -s https://api.mistral.ai/v1/chat/completions \
+              -H "Authorization: Bearer $MISTRAL_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d @request.json \
+              | jq -r '.choices[0].message.content' \
+              > "$output"
+
+          done
+
+      ############################################################
+      # Merge findings
+      ############################################################
+
+      - name: Merge review results
+        run: |
+
+          echo '{"summary":"","findings":[]}' > review.json
+
+          jq -s '
+          {
+            summary:
+              (map(.summary) | join("\n")),
+            findings:
+              (map(.findings[]) )
+          }
+          ' responses/*.json > review.json
+
+          cat review.json
+
+      ############################################################
+      # Validate comments against diff
+      ############################################################
+
+      - name: Validate findings
+        run: |
+          # Optional:
+          # Verify that:
+          #  - file exists in PR
+          #  - line belongs to changed hunk
+          # Remove invalid comments before submission
+
+      ############################################################
+      # Submit PR review
+      ############################################################
+
+      - name: Create Review
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+
+            const review = JSON.parse(
+              fs.readFileSync("review.json","utf8")
+            );
+
+            const comments = [];
+
+            for (const f of review.findings || []) {
+
+              comments.push({
+                path: f.path,
+                line: Number(f.line),
+                side: "RIGHT",
+                body:
+`### ${f.title}
+
+**Severity:** ${f.severity}
+
+${f.comment}`
+              });
+
+            }
+
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              event: comments.length ? "COMMENT" : "APPROVE",
+              body: review.summary || "AI Review completed.",
+              comments
+            });
